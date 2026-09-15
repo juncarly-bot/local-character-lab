@@ -134,6 +134,32 @@ Relationshipはメッセージ1通ごとに機械的に加点しない。
 
 Relationship growth should use `participation_duration`, not total room duration. A character who entered for only five minutes should not receive the same relationship update as a character who participated for one hour.
 
+## Interaction Event v1
+
+Relationship変化の正式な橋渡しとして `docs/INTERACTION_EVENTS.md` を採用する。
+
+v1の中心イベント:
+
+- `shared_enjoyment`
+- `support`
+- `personal_disclosure`
+- `praise`
+- `gratitude`
+- `help`
+- `disagreement`
+- `criticism`
+- `conflict`
+- `apology`
+- `reconciliation`
+- `promise_kept`
+- `promise_broken`
+
+Interaction Eventは原則として `actor -> target` の方向を持ち、`strength: 0.0-1.0` とConversation Contextを使って実際のdeltaを調整する。
+
+長期軸の通常変化は小さくし、Tensionのみ短期状態として比較的大きく変動してよい。
+
+Affectionは更新後も必ず `0-100` にclampし、負値を許可しない。
+
 ## Anti-farming principle
 
 「物理」という単語を繰り返すだけでAffectionが上がり続けるような設計にはしない。
@@ -145,7 +171,7 @@ Relationship growth should use `participation_duration`, not total room duration
 - 1セッションあたりの変化量に上限を持たせる
 - 高い数値ほど成長を緩やかにすることを検討する
 
-具体的なdelta表と上限値は実装前に正式化する。
+通常会話ではFamiliarity / Affection / Trust / Comfortの各軸を1セッションあたり絶対値 `2.0` 程度までに抑える初期案を採用する。重大イベントは別枠で扱える。
 
 ## Use in behavior
 
