@@ -16,6 +16,7 @@ v1では以下を中核とする。
 - 部屋全体の会話雰囲気
 - 誰から誰へのInteraction Events
 - 部屋全体と各キャラクター参加時間の分離
+- Room SessionとAnalysis Segmentの2段階の時間境界
 
 ## Inputs
 
@@ -166,14 +167,7 @@ Character Interestsもユーザーが自由に追加できるため、Conversati
 
 Interaction EventsはRelationship更新やMemory生成の主要入力になる。
 
-例:
-
-- USERがSAYOへ悩みを打ち明ける
-- SAYOがUSERを励ます
-- TTがSAYOへ相談する
-- AがBを強く否定する
-
-Interaction Event typeの正式一覧は次の設計段階で決定する。
+正式なv1 type一覧とdelta方針は `docs/INTERACTION_EVENTS.md` を参照する。
 
 ## Duration fields
 
@@ -188,6 +182,74 @@ Conversation Analysisでは少なくとも以下を分離する。
 - Mood / fatigue: participation durationを重視
 - Relationship: participation durationと会話内容を組み合わせる
 
+## Time boundaries: Room Session and Analysis Segment
+
+会話を1種類の「session」だけで区切らない。
+
+### Room Session
+
+Room Sessionは「同じ社会的な場が続いている時間」を表す。
+
+開始:
+
+- roomが空またはidle状態から、USERまたはキャラクターが会話を開始したとき
+
+継続:
+
+- topicが変わっても、同じ場で自然に会話が続いている限り継続する
+- キャラクターの入退室だけでは原則終了しない
+
+終了候補:
+
+- roomが空になる
+- `15分` 程度、意味のある発言がない
+- 全active characterがSLEEPへ移行する
+- 明示的に会話空間を閉じる
+
+`15分` はv1初期値であり、試遊で調整する。
+
+### Analysis Segment
+
+Analysis SegmentはConversation Analysis、Relationship更新、Memory Candidate生成のための意味的な小区間。
+
+新しいsegmentを開始する候補:
+
+- 明確なtopic shift
+- 前segmentから `3-5` utterances経過
+- 強いInteraction Event候補が発生
+- 主要参加者の入室または退出
+- 数分以上の短いidle後に会話が再開
+
+つまり、1つのRoom Session内に複数のAnalysis Segmentが存在してよい。
+
+例:
+
+```text
+Room Session 20:00-20:45
+  Segment 1: 物理 20:00-20:12
+  Segment 2: 夕飯 20:15-20:25
+  Segment 3: ゲーム 20:28-20:45
+```
+
+この分離により、長い雑談全体を1つの感情・話題で塗りつぶさずに済む。
+
+## Update timing
+
+Conversation Analysisは毎発言でフル更新しない。
+
+通常は直近のvalid analysisを再利用し、以下でrefreshする。
+
+- `3-5` utterances経過
+- topic shift
+- significant Interaction Event候補
+- 主要な入退室
+- 数分経過
+- Analysis Segment終了
+
+ユーザーへの返答を待たせないため、可能ならrefreshはbackground pathへ回す。
+
+詳細なLLM call budgetは `docs/RUNTIME_CALL_BUDGET.md` を参照する。
+
 ## Consumers
 
 ### Mood
@@ -200,7 +262,9 @@ Moodは一発言ごとに急変させず、会話の流れに応じて徐々に�
 
 Conversation Analysis + Character Interests + Interaction Events + Relationship + participation duration からRelationship deltaを計算する。
 
-原則、1メッセージごとに直接加点せず、会話イベントまたはセッション単位で反映する。
+原則、1メッセージごとに直接加点せず、Analysis Segmentまたは意味のあるInteraction Event単位で反映する。
+
+Room Session全体ではanti-farming capを適用する。
 
 ### Presence
 
@@ -218,12 +282,13 @@ Conversation Analysis + Memory + Profile + Relationship + Mood から「この�
 - Presenceは固定タイマーではなくスコア補正で扱う
 - 共通分析とキャラクター固有解釈を分離する
 - 部屋全体の雰囲気と、方向を持つ人物間イベントを分離する
+- Room SessionとAnalysis Segmentを分離する
 - Developer Modeから分析結果と最終判断への寄与を確認できる設計を目指す
 
 ## Next decisions
 
-1. Interaction Event typeの正式一覧
-2. Conversation Analysisの更新タイミング
-3. セッション境界の定義
-4. Interaction EventからRelationship deltaへ変換するルール
-5. 3B本体に分析させる部分と決定論ロジックで処理する部分の分担
+1. Mood state representation and transition rules
+2. Presence enter/leave weighting and cooldowns
+3. Desire refresh frequency and priority rules
+4. Memory persistence layout / importance / forgetting
+5. Character Profile exact serialization schema
