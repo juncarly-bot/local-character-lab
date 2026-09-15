@@ -1,12 +1,24 @@
 # Character System
 
-## Character Profile
+## Character Profile v1 baseline
 
 各キャラクターは共通ベースモデルとは独立したProfileを持つ。Profileはキャラクターの恒常的な性質を表し、現在状態や一時感情とは分離する。
 
+v1では以下の構造を正式な基本方針として採用する。
+
+- Identity / speech style
+- Personality
+- Conversation behavior
+- Interests
+- Values
+- Life-cycle settings
+- Initial directional Relationships
+
+正確な保存形式や数値アンカーは後で調整してよいが、概念構造はこの形で進める。
+
 ### Personality
 
-初期候補は以下。各値は原則 `0-100`。
+各値は原則 `0-100`。
 
 - `sociability`: 社交性。人のいる場を好む度合い
 - `initiative`: 自発性。自分から行動・発言する度合い
@@ -40,7 +52,7 @@ interests:
   astronomy: 90
 ```
 
-現在の会話を話題分類し、話題と興味度の一致を発言欲求・入室スコアへ反映する。
+現在の会話を話題分類し、話題と興味度の一致を発言欲求・入室スコア・Mood・Relationship成長へ反映する。
 
 「興味が高い = 必ず発言する」にはしない。人格、関係、Mood、Desire、最近の発言頻度などと組み合わせる。
 
@@ -70,6 +82,8 @@ values:
 - `desires`
 - 関係ごとの一時的な `tension`
 
+MoodやDesireはProfileそのものではなく、Conversation Analysis、時刻、Memory、Relationshipなどから変化する実行時状態として扱う。
+
 ## Initial example
 
 以下は設計例であり、SAYOの正式値ではない。
@@ -97,4 +111,24 @@ interests:
   technology: 30
 ```
 
-正式なCharacter Profile v1 schemaは別途決定する。
+## UI principle
+
+チャット画面のキャラクターアイコンからCharacter Detail / Editorへ移動できるようにする。
+
+ユーザーが主に編集する項目:
+
+- Personality
+- Conversation behavior
+- Interests
+- Values
+- 初期関係性や明示的な関係設定
+
+主に閲覧する実行時項目:
+
+- Mood
+- Current Desire
+- Life state
+- Room state
+- 最近の判断理由
+
+Developer Modeでは入室、沈黙、発言、退出などの判断要因を確認できるようにする。
