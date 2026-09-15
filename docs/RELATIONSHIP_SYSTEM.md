@@ -112,20 +112,40 @@ tt_to_sayo:
 
 数値はテンプレートであり、正式な初期値は各キャラクターごとに設定する。
 
-## Change policy
+## Conversation-driven change policy
 
-日常の挨拶だけで数値を上げ続けない。意味のある出来事に対して変化させる。
+Relationshipはメッセージ1通ごとに機械的に加点しない。
 
-例:
+会話内容、会話の質、Character Interests、そのキャラクターの実参加時間などをConversation Analysisで評価し、会話イベントまたはセッション単位で更新する。
 
-- 一緒に長く楽しく過ごした: Familiarity小増加、Affection小増加
-- 秘密を打ち明けた: Trust増加
-- 助けてもらった: Affection / Trust増加
-- 約束を破った: Trust低下
-- 強く言い争った: Comfort低下、Tension大幅上昇、必要ならAffection小低下
-- 仲直りした: Tension低下、Comfort回復
+特に、キャラクターが好きな話題を相手と楽しく話した場合は、AffectionやComfortが上がりやすくなる。
 
-変化量は後でイベント表として正式化する。
+概念例:
+
+- ordinary shared time -> Familiarity中心
+- enjoyable favorite-topic conversation -> Affection / Comfort中心
+- serious consultation / meaningful disclosure -> Trust中心
+- positive long conversation -> Familiarity + small Affection / Comfort
+- repeated unpleasant interaction -> Comfort低下、Tension上昇、必要ならAffection小低下
+- promise broken -> Trust低下
+- reconciliation -> Tension低下、Comfort回復
+
+同じ長さの会話でも、本人のInterestsやValuesと合うかどうかで変化量は異なる。
+
+Relationship growth should use `participation_duration`, not total room duration. A character who entered for only five minutes should not receive the same relationship update as a character who participated for one hour.
+
+## Anti-farming principle
+
+「物理」という単語を繰り返すだけでAffectionが上がり続けるような設計にはしない。
+
+そのため:
+
+- ターン単位ではなくセッション / conversation-event単位で評価する
+- 同一内容の反復は効果を弱める
+- 1セッションあたりの変化量に上限を持たせる
+- 高い数値ほど成長を緩やかにすることを検討する
+
+具体的なdelta表と上限値は実装前に正式化する。
 
 ## Use in behavior
 
