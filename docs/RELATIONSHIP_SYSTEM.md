@@ -110,13 +110,11 @@ tt_to_sayo:
 
 順序は Familiarity / Affection / Trust / Comfort。
 
-数値はテンプレートであり、正式な初期値は各キャラクターごとに設定する。
-
 ## Conversation-driven change policy
 
 Relationshipはメッセージ1通ごとに機械的に加点しない。
 
-会話内容、会話の質、Character Interests、そのキャラクターの実参加時間などをConversation Analysisで評価し、会話イベントまたはセッション単位で更新する。
+会話内容、会話量、Character Personality、Character Interests、そのキャラクターの実参加時間などをConversation Analysisで評価し、会話イベントまたはセッション単位で更新する。
 
 特に、キャラクターが好きな話題を相手と楽しく話した場合は、AffectionやComfortが上がりやすくなる。
 
@@ -132,7 +130,44 @@ Relationshipはメッセージ1通ごとに機械的に加点しない。
 
 同じ長さの会話でも、本人のInterestsやValuesと合うかどうかで変化量は異なる。
 
-Relationship growth should use `participation_duration`, not total room duration. A character who entered for only five minutes should not receive the same relationship update as a character who participated for one hour.
+Relationship growthは総Room時間ではなく、本人の`participation_duration`を重視する。
+
+## Invitation effect
+
+ユーザーがUIの招待ボタンで特定キャラクターを呼ぶ行為は、「自分を選んで呼んでくれた」という小さなRelationshipシグナルとして扱ってよい。
+
+候補:
+
+- Affection: very small positive
+- Comfort: very small positive
+
+ただし招待連打によるポイント稼ぎを防ぐため、同一セッション / 一定時間内では1回だけ有効にするなどcooldownを設ける。
+
+退出ボタンは主としてUI操作であり、長期Affectionを大きく下げない。
+
+## Passive Affection decay
+
+長期間まったく話さない場合、Affectionはごくゆっくり下がってよい。
+
+ただし、親しくなった関係が放置だけで赤の他人へ戻ることは避ける。
+
+初期案:
+
+```text
+if affection > 80 and long_inactivity:
+    affection slowly approaches 80
+
+if affection <= 80:
+    no passive decay from inactivity
+```
+
+つまり自然減衰のfloorを約`80`に置く。
+
+この`80`はv1の初期値であり、試遊後に調整可能とする。
+
+Familiarity / Trustは通常、単に話さなかっただけでは下げない。Comfortは必要なら非常に小さな減衰を検討する。
+
+Tensionは逆に時間経過で減衰する。
 
 ## Interaction Event v1
 
@@ -162,14 +197,11 @@ Affectionは更新後も必ず `0-100` にclampし、負値を許可しない。
 
 ## Anti-farming principle
 
-「物理」という単語を繰り返すだけでAffectionが上がり続けるような設計にはしない。
-
-そのため:
-
 - ターン単位ではなくセッション / conversation-event単位で評価する
 - 同一内容の反復は効果を弱める
 - 1セッションあたりの変化量に上限を持たせる
 - 高い数値ほど成長を緩やかにすることを検討する
+- 招待ボタン等のUIイベントにもcooldownを設ける
 
 通常会話ではFamiliarity / Affection / Trust / Comfortの各軸を1セッションあたり絶対値 `2.0` 程度までに抑える初期案を採用する。重大イベントは別枠で扱える。
 
