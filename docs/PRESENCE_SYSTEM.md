@@ -8,8 +8,10 @@
 
 - 登録キャラクターは最大10人程度を想定
 - 同時入室は最大4人
+- 基本体験では3人を通常メンバーとして部屋に置き、第4席を流動的なGuest Slotとして使う
+- Guest Slotは現在話題へのInterest、Relationship、Desireなどで入室候補を選ぶ
 - 満室時に新しいキャラクターが入りたがっても、既存キャラクターを機械的に追い出さない
-- 誰かが自然に退出した後で再判定する
+- ユーザーの明示的な招待は通常の自動入室より強いシグナルとして扱う
 
 ## Eligibility
 
@@ -28,7 +30,8 @@ room_count < 4
 候補:
 
 - Conversation Analysisが示す現在話題
-- 現在話題への興味
+- 現在話題へのInterest
+- Semantic Similarityで推定されたInterest
 - 部屋にいる相手へのAffection
 - 部屋にいる相手へのComfort
 - Tension
@@ -58,7 +61,28 @@ enter_score =
 + randomness
 ```
 
+第4席では特に`topic_interest`を強めに使い、現在の話題が得意・好きなキャラクターが自然に寄ってきやすくする。
+
 正確な重みは実装・試遊をしながら調整する。
+
+## Base three + Guest Slot
+
+通常は3人のキャラクターがチャット空間にいて、話題によって4人目が入りやすくなる。
+
+例:
+
+```text
+SAYO
+TT
+A
+[ Guest Slot ]
+```
+
+物理Topicが始まり、Bの`physics interest`が高ければGuest Slotへのenter scoreが上がる。
+
+ゲームTopicへ移れば、別キャラクターが候補になってよい。
+
+これにより10人全員を常時会話させず、話題に応じた入れ替わりを作る。
 
 ## Conversation duration
 
@@ -69,14 +93,6 @@ enter_score =
 現在の部屋で会話自体がどれくらい続いているか。
 
 主に未入室キャラクターのPresence判定に使う。
-
-例:
-
-- 開始直後: まだ様子が分からないため補正は小さい
-- 数分から十数分: 興味のある話題なら入室したくなりやすい
-- 長時間: 新規参加への魅力は話題・Relationship次第。既存メンバーには退出方向の補正が生まれ得る
-
-固定時間で強制入退室させず、スコア補正として使う。
 
 ### participation_duration
 
@@ -89,48 +105,43 @@ enter_score =
 - Relationshipのセッション更新
 - 長時間滞在によるrecent presence補正
 
-1時間続いた部屋へ最後の5分だけ参加したキャラクターを、1時間参加した扱いにはしない。
-
 ## Time of day
 
 現在時刻とLife CycleをPresenceへ反映する。
 
-例:
-
 - 自由時間の中心: 通常の入室判定
 - 睡眠時刻が近い: 入室スコア低下、退出スコア上昇
-- すでにSLEEPへ遷移すべき時刻: 新規入室不可
-
-時刻だけで機械的な行動を強制せず、Life state、Mood、Desireと組み合わせる。
+- `SLEEP`: 新規入室不可
 
 ## Invitations
 
-キャラクターは別のキャラクターを呼ぶことができる。
+UIに招待ボタンを用意する。
 
-招待は強制ではなく、受け手側が以下を考慮して判断する。
+招待は以下の2種類を許可する。
 
-- `FREE` か
-- 招待者とのRelationship
-- 部屋の他メンバーとのRelationship
-- 現在話題へのInterests
-- Current Desire
-- Mood
-- 現在時刻
+- User invitation: ユーザーが好きなキャラクターを明示的に呼ぶ
+- Character invitation: キャラクターが別キャラクターを呼びたがる
 
-## Leaving
+ユーザー招待はGuest Slotへの優先度を強く上げる。ただしLife stateがSLEEP等の場合の扱いは設定で決める。
 
-退出も入室と同じくらい重要。
+招待はRelationshipにも小さな正方向イベントとして反映してよいが、連打でAffectionを稼げないよう1セッション内の効果に上限・cooldownを置く。
 
-候補要因:
+## Leaving / Exit button
+
+自律退出に加えて、UIに退出ボタンを用意する。
+
+自律退出の候補要因:
 
 - 睡眠時刻が近い
 - `participation_duration` が長い
 - 興味のない話題が続いている
 - Tensionが高い
-- 一人でいたいDesire
-- 発言機会が長くない
+- `be_alone` / `rest` Desire
 - Moodが疲労・眠気寄り
-- 会話のenergyが本人の好みと合わない
+
+ユーザーの退出操作は強制的なUI操作として尊重する。
+
+ただし、操作しただけで長期Relationshipを大きく悪化させない。必要ならComfort / Tensionへごく小さい一時補正にとどめる。
 
 ## Silence
 
