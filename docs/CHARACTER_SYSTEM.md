@@ -10,6 +10,7 @@ v1では以下の構造を正式な基本方針として採用する。
 - Personality
 - Conversation behavior
 - Interests
+- Expertise / knowledge background
 - Values
 - Life-cycle settings
 - Initial directional Relationships
@@ -36,25 +37,72 @@ v1では以下の構造を正式な基本方針として採用する。
 
 これらは発言生成文そのものだけでなく、発言するか・黙るか・入室するかの判断にも使う。
 
-### Interests
+## Interest / Expertise model
 
-興味は固定カテゴリだけにせず、ユーザーが任意の項目を追加できる設計を目指す。
+InterestとExpertiseは別の概念として扱う。
+
+- `interest`: その話をどれだけ好きか、参加したいか
+- `expertise`: その分野についてどれくらい詳しいか
+
+「好きだが詳しくない」「詳しいが自分からは話さない」を成立させる。
+
+### Manual configuration scope
+
+全話題へ手入力はしない。
+
+ユーザーは主に以下だけ設定する。
+
+1. 10-15個程度の大分類
+2. キャラクター性を強く出す特徴的な話題
+3. 必要な例外
 
 例:
 
 ```yaml
-interests:
-  physics: 70
-  games: 35
-  food: 25
-  relationships: 40
-  technology: 80
-  astronomy: 90
+domains:
+  science:
+    interest: 75
+    expertise: 65
+  technology:
+    interest: 60
+    expertise: 70
+  games:
+    interest: 90
+    expertise: 55
+  food:
+    interest: 55
+    expertise: 35
+  travel:
+    interest: 65
+    expertise: 40
+
+topics:
+  physics:
+    interest: 95
+    expertise: 85
+  astronomy:
+    interest: 90
+    expertise: 70
+  cars:
+    interest: 20
+    expertise: 15
 ```
 
-現在の会話を話題分類し、話題と興味度の一致を発言欲求・入室スコア・Mood・Relationship成長へ反映する。
+未設定TopicはSemantic Similarity、大分類、knowledge background、Personality / defaultの順で自動推定する。
 
-「興味が高い = 必ず発言する」にはしない。人格、関係、Mood、Desire、最近の発言頻度などと組み合わせる。
+詳細は `docs/KNOWLEDGE_SYSTEM.md` を参照。
+
+### Inferred interests
+
+会話履歴などから自動推定された興味は、ユーザー設定と分離する。
+
+```yaml
+hot_springs:
+  interest: 72
+  source: inferred
+```
+
+ユーザーが手動設定した値は `source: user` とし、自動推定で上書きしない。
 
 ### Values
 
@@ -81,35 +129,9 @@ values:
 - `mood`
 - `desires`
 - 関係ごとの一時的な `tension`
+- Topicごとの一時Knowledge Access / Confidence
 
 MoodやDesireはProfileそのものではなく、Conversation Analysis、時刻、Memory、Relationshipなどから変化する実行時状態として扱う。
-
-## Initial example
-
-以下は設計例であり、SAYOの正式値ではない。
-
-```yaml
-personality:
-  sociability: 65
-  initiative: 45
-  curiosity: 70
-  emotionality: 60
-  humor: 55
-  assertiveness: 40
-
-conversation:
-  talkativeness: 55
-  interruption: 20
-  topic_change: 35
-  silence_tolerance: 70
-
-interests:
-  physics: 45
-  games: 70
-  food: 65
-  relationships: 75
-  technology: 30
-```
 
 ## UI principle
 
@@ -120,8 +142,30 @@ interests:
 - Personality
 - Conversation behavior
 - Interests
+- Expertise / knowledge background
 - Values
 - 初期関係性や明示的な関係設定
+
+Interests / Expertise UIは次の3層を基本とする。
+
+```text
+[大分類]
+科学          75
+技術          60
+ゲーム        90
+食べ物        55
+旅行          65
+
+[特徴的な話題]
+物理          95
+宇宙          90
+車            20
+
+[自動推定された興味]
+温泉          72
+AI            68
+数学          82
+```
 
 主に閲覧する実行時項目:
 
@@ -130,5 +174,6 @@ interests:
 - Life state
 - Room state
 - 最近の判断理由
+- 自動推定されたInterest / Knowledge state
 
-Developer Modeでは入室、沈黙、発言、退出などの判断要因を確認できるようにする。
+Developer Modeでは入室、沈黙、発言、退出、Conversation Act、Topic推定などの判断要因を確認できるようにする。
