@@ -37,6 +37,67 @@ v1では以下の構造を正式な基本方針として採用する。
 
 これらは発言生成文そのものだけでなく、発言するか・黙るか・入室するかの判断にも使う。
 
+## Speech Style v1
+
+Speech StyleはCharacter Profileの正式な必須領域として扱う。
+
+語尾や口癖だけでキャラクターを作らず、以下の4層で表現する。
+
+```text
+Speech Identity
+Speech Tendencies
+Signature Expressions
+Speech Examples
+```
+
+Character Profile UIからキャラクターごとに個別編集可能とする。
+
+主な編集項目:
+
+- 一人称
+- 呼称ルール
+- 丁寧さ
+- warmth / 親しみやすさ
+- directness
+- sentence length
+- emotional expression
+- playfulness
+- 特徴的な語尾
+- 口癖
+- 語尾 / 口癖の頻度・cooldown
+- 話し方の自然言語特徴
+- avoid rules
+- Conversation Act / Mood別の例文
+
+Hard ruleとSoft ruleを分離する。
+
+- Hard rule: 一人称、呼称、禁止表現など
+- Soft rule: 語尾、口癖、テンポ、文長など
+
+特徴的な語尾は毎文強制しない。同じ表現の直近使用、Mood、Relationship、Conversation Actなどで頻度を補正する。
+
+Speech StyleはRuntimeで以下のように解決する。
+
+```text
+Character Profile
++
+Relationship
++
+Mood
++
+Conversation Act
++
+Current Topic
+↓
+Speech Style Resolver
+↓
+Current Speech Style
+↓
+main local model
+```
+
+詳細仕様および本採用の東北イタコ型テストProfileは `docs/SPEECH_STYLE_SYSTEM.md` を参照する。
+
 ## Interest / Expertise model
 
 InterestとExpertiseは別の概念として扱う。
@@ -141,6 +202,7 @@ MoodやDesireはProfileそのものではなく、Conversation Analysis、時刻
 
 - Personality
 - Conversation behavior
+- Speech Style
 - Interests
 - Expertise / knowledge background
 - Values
@@ -176,4 +238,4 @@ AI            68
 - 最近の判断理由
 - 自動推定されたInterest / Knowledge state
 
-Developer Modeでは入室、沈黙、発言、退出、Conversation Act、Topic推定などの判断要因を確認できるようにする。
+Developer Modeでは入室、沈黙、発言、退出、Conversation Act、Topic推定、Speech Style Resolverの有効補正などの判断要因を確認できるようにする。
