@@ -2,68 +2,199 @@
 
 ## Base UI
 
-会話画面は新躍進政策のチャット欄を参考にする。
+会話画面は新躍進政策のチャット機能を視覚・操作上の参考にする。
 
-画面上部または会話参加者表示にキャラクターアイコンを置き、アイコンをタップするとCharacter Detailへ移動する。
+普段のチャット画面は会話を邪魔しない構成を優先し、詳細な数値や設定はCharacter Profileへ退避する。
 
-## Character Detail
+チャット画面上部または参加者表示には、現在Roomにいるキャラクターのアイコンを表示する。
+
+- アイコンをタップすると、そのキャラクターのCharacter Profileを開く
+- Profileを閉じると同じ会話位置へ戻れる
+- 招待 / 退出操作はチャット画面から行える
+- 第4席Guest Slotも参加者表示上で確認できる
+
+Character Profileはチャットから開く場合とCharacters一覧から開く場合で同じデータ・同じ画面コンポーネントを使う。
+
+## Main navigation
+
+MVPでは少なくとも以下を用意する。
+
+- `Chat`
+- `Characters`
+- `Settings`
+
+必要ならDeveloper Mode有効時のみDebug入口を追加する。
+
+## Characters screen
+
+チャットとは別に、登録キャラクターを一覧で確認できる画面を用意する。
+
+一覧カード例:
+
+```text
+[SAYO icon]  SAYO
+FREE / Room IN
+Mood: HAPPY
+USERとの関係: 親しい
+
+[TT icon]    TT
+FREE / Room OUT
+Mood: QUIET
+USERとの関係: 友人
+```
+
+一覧では情報を詰め込みすぎず、主に以下を表示する。
+
+- アイコン
+- 名前
+- Life state: `SLEEP` / `FREE`
+- Room state: `IN` / `OUT`
+- 現在Moodの短い表示
+- USERとのRelationship要約
+- 必要なら現在の強いDesire / Seedがあることを示す小さなインジケータ
+
+カードをタップするとCharacter Profileへ移動する。
+
+Characters画面では将来的に以下も可能にする。
+
+- キャラクター追加
+- 並び替え
+- 有効 / 無効
+- 初期3人のResident指定
+- アイコン変更
+
+## Character Profile
+
+Character Profileは「設定画面」だけではなく、そのキャラクターが現在どういう人物・状態なのかを見る場所として作る。
+
+上部にはIdentity Headerを置く。
+
+```text
+[large icon]
+SAYO
+FREE / Room IN
+Mood: HAPPY / SOCIAL
+
+USERとの関係: 親しい
+Affection 86
+```
+
+その下をセクションまたはタブで整理する。
+
+推奨構造:
+
+1. Overview
+2. Personality
+3. Interests & Expertise
+4. Relationships
+5. Memory
+6. Desire & Seeds
+7. Behavior
+8. Developer
+
+モバイルでは横タブを大量に並べるより、上部の少数タブ + 折りたたみSection、または縦スクロールSectionを優先する。
+
+## 1. Overview
+
+キャラクターを一目で把握する画面。
 
 表示候補:
 
 - アイコン / 名前
-- 現在状態: `SLEEP` / `FREE`
-- Room: `IN` / `OUT`
+- キャラクター説明
+- speech style要約
+- Life state
+- Room state
 - Mood
-- 現在のDesire
-- Personality
-- Conversation behavior
-- Interests
-- Values
-- Relationships
-- Memory
+- social energy
+- sleepiness
+- Current Desire
+- 現在の強いConversation Seed
+- USERとのRelationship要約
+- 最近よく出たTopics
 
-## Editable sections
+ここは日常的に見る画面なので内部数値を出しすぎない。
 
-### Personality
+## 2. Personality
 
-スライダーまたは数値入力で `0-100` を編集。
+原則 `0-100`。
 
-- sociability
-- initiative
-- curiosity
-- emotionality
-- humor
-- assertiveness
+編集可能:
 
-### Conversation
+- `sociability`
+- `initiative`
+- `curiosity`
+- `emotionality`
+- `humor`
+- `assertiveness`
 
-- talkativeness
-- interruption
-- topic_change
-- silence_tolerance
+スライダー + 数値表示を基本とする。
 
-### Interests
-
-任意の興味項目を追加・削除できる。
+数値だけで意味が分かりにくいため、短い説明文を併記する。
 
 例:
 
 ```text
-物理学          70
-ゲーム          35
-食べ物          25
-人間関係        40
-テクノロジー    80
-[ + 興味を追加 ]
+好奇心  78
+知らない話題にも比較的強く興味を示します
 ```
 
-### Values
+## 3. Interests & Expertise
 
-自然言語で追加・編集・削除できる。
+InterestとExpertiseを混同しないUIにする。
 
-## Relationship view
+### Interest
 
-相手ごとに以下を表示する。
+```text
+興味
+
+[大分類]
+科学          75
+技術          60
+ゲーム        90
+食べ物        55
+旅行          65
+
+[特徴的な話題]
+物理          95
+宇宙          90
+車            20
+
+[自動推定された興味]
+温泉          72
+AI            68
+数学          82
+```
+
+### Expertise
+
+同じTopicについて、知識の深さを別表示する。
+
+```text
+得意分野
+
+科学          70
+技術          80
+ゲーム        55
+
+物理          85
+宇宙          70
+車            15
+```
+
+ユーザー設定値と自動推定値は視覚的に区別する。
+
+- `source: user` は自動推定で上書きしない
+- `source: inferred` は推定値として表示する
+- 推定値をユーザーが編集したら `source: user` へ昇格する
+
+未知TopicはKnowledge Systemのfallbackで自動評価するため、全Topicの手入力を要求しない。
+
+## 4. Relationships
+
+Relationshipは相手ごとに確認する。
+
+表示項目:
 
 - Familiarity
 - Affection
@@ -72,41 +203,171 @@
 - Tension
 - Relationship Tags
 
-通常表示では「親しい」「知人」などの要約も併記してよい。
+例:
 
-## Desire view
+```text
+USER
+親しい
+Familiarity 82
+Affection   86
+Trust       78
+Comfort     88
+Tension      2
+
+TT
+close_friend
+Familiarity 80
+Affection   72
+Trust       82
+Comfort     70
+Tension      5
+```
+
+通常表示では数値とともに「親しい」「友人」「少し気まずい」などの短い要約を出してよい。
+
+Relationshipの方向性は内部では保持するが、通常UIで両方向を同時表示して複雑にしすぎない。Developer Modeでは双方を確認可能にする。
+
+## 5. Memory
+
+そのキャラクターが知っている / 覚えているMemoryを確認する。
+
+表示候補:
+
+- summary
+- type
+- topics
+- importance
+- confidence
+- salience
+- created_at
+- follow-up状態
+
+通常UIでは自然文中心にする。
+
+例:
+
+```text
+昨日、USERが試験を受ける予定だと話していた
+覚えやすさ: 高
+Follow-up: 結果を聞く
+```
+
+Developer ModeではMemory ID、known_by、retentionなども確認できる。
+
+## 6. Desire & Seeds
+
+Current DesireとConversation Seedを表示する。
 
 Current Desireは基本的に閲覧用。
 
 例:
 
 ```text
-昨日USERが話していた物理の問題が解けたか聞きたい
+現在の欲求
+USERに昨日の試験結果を聞きたい
 Strength: 72 / 100
-Source: 昨日の会話
 ```
 
-## Developer Mode
+Seed表示例:
 
-キャラクターの内部判断を確認できるデバッグ表示を用意する。
+```text
+話したいこと
+- 昨日の試験結果を聞きたい [memory]
+- ゲームについて少し話したい [interest]
+- 甘いものが食べたい [random_thought]
+```
+
+通常UIでは内部scoreを必ずしも表示しない。
+
+## 7. Behavior
+
+会話傾向を編集する。
+
+- `talkativeness`
+- `interruption`
+- `topic_change`
+- `silence_tolerance`
+
+必要に応じてLife Cycle設定もここから編集できる。
+
+## 8. Values / Identity
+
+キャラクターのIdentity、speech style、Valuesは明示的に編集可能にする。
+
+Valuesは自然言語のリスト形式。
 
 例:
 
 ```text
-現在: 入室候補
-
-物理の話題への興味      +12
-USERとのAffection        +18
-TTが部屋にいる           +9
-initiative               +4
-疲労                      -6
-recent_presence          -10
-
-enter_score: 71 / 100
+- 努力している人を応援したい
+- 無理をしている人は放っておけない
+- 一人で過ごす時間も大切にする
 ```
 
-これは最終ユーザー体験だけでなく、パラメータ調整・不具合解析にも使う。
+Character Profileを単なる数値パネルにせず、「どんな人物なのか」が読めることを重視する。
+
+## Developer Mode
+
+Developer Modeでは通常UIで隠している内部判断を確認できる。
+
+例:
+
+```text
+Speaker decision: SAYO
+speak_score: 73
+
+topic_interest      +18
+desire              +14
+relationship         +9
+initiative           +7
+recent_speaker       -4
+random               +2
+
+Conversation Act: question
+Expertise: 32
+Knowledge depth: Level 1
+Knowledge Access: KNOWN
+```
+
+他にも以下を確認可能にする。
+
+- Guest enter score
+- Seed proposal score
+- Topic Lifecycle state
+- recent Conversation Acts
+- Memory retrieval結果
+- Runtime Contextに実際に渡されたProfile slice
+- cooldown / penalties
+
+これはパラメータ調整・不具合解析・会話品質改善の主要ツールとして扱う。
+
+## Chat-to-Profile UX
+
+チャット中のキャラクターアイコンタップは、会話から離れた感覚を弱くする。
+
+推奨:
+
+- Androidではfull-screen sheetまたはmodal sheetでProfileを表示
+- 閉じると元のscroll位置・入力途中テキストを維持
+- Profile内からRelationship / Memory等の詳細へ移動可能
+- Invite / ExitのようなRoom操作はチャットへ戻らなくても実行可能にしてよい
+
+Characters一覧から開いた場合も同じCharacter Profileを使う。
 
 ## Principle
 
-普段のチャット画面はキャラクターとの会話を邪魔しないシンプルな構成にし、細かい数値・設定はアイコンタップ後のCharacter Detailへ退避する。
+UIは2つの入口を持つ。
+
+```text
+Chat
+  -> character icon
+  -> Character Profile
+
+Characters
+  -> character list
+  -> Character Profile
+```
+
+Character Profileは詳細に作るが、Chat画面そのものは軽く保つ。
+
+「会話中はキャラクターを見る」「一覧では世界の住人全体を見る」という役割分担にする。
