@@ -6,17 +6,16 @@
 
 時間・数値・状態遷移・上限・cooldownなどはCharacter Engineの決定論ロジックで処理する。
 
-この方針はモデルサイズに依存しない。8B級モデルでは十分な意味理解余力を期待し、軽量モデルへ置き換える場合も同じAPI境界を維持する。
-
 ## Responsibility split
 
-### LLM
+### Main local LLM
 
 - Character response generation
-- Conversation Analysis
+- 複雑なConversation Analysis
 - Interaction Event extraction
 - 必要時のDesire表現生成
 - セッション終了時のMemory要約
+- 高度な意味理解が必要なKnowledge / News interpretation
 
 ### Deterministic engine
 
@@ -30,6 +29,7 @@
 - call budget enforcement
 - Memory candidate queue
 - schema validation / retry policy
+- simple topic / domain lookup
 
 ## Foreground path
 
@@ -61,33 +61,21 @@ USER message
 
 通常は1人、必要時のみ2人まで反応する。
 
-```text
-analysis if needed
-+ character A
-+ character B
-```
-
 目標: `2-3 calls`
 
-3人以上が続けて反応するのは特殊場面のみ。
-
 ## Hard limits
-
-初期v1では以下を採用する。
 
 - 通常ユーザーターン: `1-2` LLM calls
 - 複数キャラ反応: `2-3` calls
 - foreground hard cap: `4` calls / user turn
 - 4人全員に毎回返答させない
-- local inferenceは原則逐次実行し、同一モデルを複数同時推論させない
-
-4 callを超えそうな処理はbackground queueへ送るか次のsegmentへ延期する。
+- local inferenceは原則逐次実行する
 
 ## Conversation Analysis refresh
 
 毎発言でフル解析しない。
 
-以下のいずれかで更新候補にする。
+更新候補:
 
 - 前回分析から `3-5` utterances経過
 - 明確なtopic shift
@@ -98,33 +86,85 @@ analysis if needed
 
 短いやり取りでは直前のAnalysisを再利用する。
 
-実装後に速度を測り、utterance数・時間閾値は調整可能とする。
-
 ## Background path
 
 以下はforeground responseから外す。
 
 - Memory summarization
 - long-term Relationship commit
-- Desire refresh when urgentではない
+- non-urgent Desire refresh
 - topic canonicalization
+- News collection / summarization
 - session summary
 
 ユーザーへの返答を先に表示し、その後に処理できる構造を優先する。
+
+## Lightweight processing hierarchy
+
+遅延対策として、最初から全処理をmain LLMへ送らない。
+
+優先順位:
+
+```text
+Deterministic code
+   ↓
+Embedding / similarity
+   ↓
+Optional lightweight model
+   ↓
+Main 8B-class model
+```
+
+### Code
+
+- room rules
+- timers
+- thresholds
+- known topic lookup
+- simple Relationship / Presence arithmetic
+
+### Embedding / similarity
+
+- 未設定Topicと既存Interest / Expertiseの近さ
+- Topic canonicalization候補
+- News CardとCharacter Interestのmatching
+
+### Optional lightweight model
+
+実測でmain modelの遅延が問題になった場合のみ追加する。
+
+候補仕事:
+
+- Topic classification
+- simple Conversation Act classification
+- importance estimation
+- short summarization
+- simple event candidate extraction
+
+0.5B-1.5B級のQwen等を候補にできるが、v1では必須依存にしない。
+
+まずmain model + deterministic code + embeddingで計測し、ボトルネックが確認されてから分業する。
+
+### Main model
+
+- final character utterance
+- ambiguous semantic judgment
+- subtle relationship / event interpretation
+- natural Desire wording
+
+main modelは「役者」と「高度な読解係」に集中させる。
 
 ## Memory calls
 
 毎ターン「記憶すべきか」をLLMへ聞かない。
 
-Conversation Analysisの `importance` とInteraction Eventsからコード側でMemory Candidateを作る。
+Conversation Analysisの`importance`とInteraction Eventsからコード側でMemory Candidateを作る。
 
 LLMによるMemory summaryは主に以下でまとめて行う。
 
 - analysis segment終了
 - room session終了
 - significant event発生時
-
-通常は複数candidateを1回のcallでまとめる。
 
 ## Desire calls
 
@@ -137,10 +177,9 @@ Desire候補の発火条件はできるだけengine側で作る。
 - favorite topic currently active
 - specific person is present
 - boredom / social desire
+- interesting News Card available
 
 LLMは必要時に「その欲求をキャラクターらしい行動・発話へどう変換するか」を担当する。
-
-全キャラクターへ毎ターンDesire生成を行わない。
 
 ## Autonomous conversation
 
@@ -152,6 +191,18 @@ LLMは必要時に「その欲求をキャラクターらしい行動・発話�
 - chain終了後にcooldownを置く
 - 沈黙を正常状態として扱う
 - 新しいDesire、入室、重要topic変化などがなければ再開しない
+
+## News / realtime latency
+
+News retrievalを通常foreground会話へ入れない。
+
+```text
+background News Collector
+→ News Cache
+→ foregroundはlocal cache参照
+```
+
+本当に「今」の情報が必要なときだけLive Retrievalを行う。
 
 ## Fallback and validation
 
@@ -166,7 +217,7 @@ LLMは必要時に「その欲求をキャラクターらしい行動・発話�
 
 ## Design principle
 
-8Bを「世界状態を全部管理する神様」にしない。
+main LLMを「世界状態を全部管理する神様」にしない。
 
 LLMは意味を読み、キャラクターとして言葉を作る。
 Character Engineは世界の時間、状態、数値、上限、整合性を守る。
