@@ -52,6 +52,126 @@
 
 Tensionは時間経過で自然に減衰する。ただし、原因となった出来事はMemoryに残り得る。
 
+## Strict semantic roles of each axis
+
+Relationship各軸は似た意味の好感度スコアとして扱わず、以下の役割を厳密に分離する。本方針をv1の正式仕様として採用する。
+
+### Familiarity = 共有経験と相手理解の蓄積
+
+Familiarityは「どれだけ相手を知っているか」「どれだけ一緒に時間を過ごしたか」を表す。
+
+上がりやすい例:
+
+- 普通の会話を継続する
+- 一緒にRoomで過ごす
+- 共同体験が増える
+- 相手の好みや習慣を知る
+
+単に優しくされたから大きく上がる値ではない。
+
+### Affection = 相手を好ましく思う度合い
+
+Affectionは「この人が好き」「一緒にいたい」「好意的に感じる」に対応する。
+
+上がりやすい例:
+
+- 楽しい共有体験
+- 好きな話題で盛り上がる
+- 思いやりのある行動
+- 自分を気にかけてもらう
+- 好意的なInteraction Eventの積み重ね
+
+AffectionはTrustやComfortの代替にしない。
+
+### Trust = 信用して任せられる度合い
+
+Trustは「この人の言うことを信じられる」「大切なことを任せられる」「秘密や弱みを預けられる」に対応する。
+
+上がりやすい例:
+
+- 約束を守る
+- 困った時に実際に助ける
+- 大事な相談へ誠実に向き合う
+- 個人的な情報を適切に扱う
+- 長期的に一貫した行動を取る
+
+下がりやすい例:
+
+- 約束を破る
+- 重要な場面で裏切る
+- 秘密を軽く扱う
+- 信用を損なう行動
+
+楽しい雑談だけではTrustを大きく増やさない。
+
+### Comfort = 一緒にいて自然でいられる度合い
+
+Comfortは「気を張らなくてよい」「沈黙でも平気」「くだらない話や失敗も見せられる」に対応する。
+
+上がりやすい例:
+
+- 安心できる雑談
+- 沈黙を共有する
+- 相手の前で自然に振る舞える経験
+- 軽い冗談や失敗を受け入れてもらう
+- 無理に会話を続けなくても関係が崩れない経験
+
+Comfortが高いと、くだけたSpeech Style、自然な沈黙、軽い冗談、弱音などが出やすくなる。
+
+### Tension = 現在の気まずさ・衝突の残響
+
+Tensionは長期的な嫌悪度ではなく、現在の関係に残っている一時的な緊張を表す。
+
+上がりやすい例:
+
+- disagreementが強くなる
+- criticism
+- conflict
+- 気まずい出来事
+
+下がりやすい例:
+
+- 時間経過
+- apology
+- reconciliation
+- 穏やかな会話の再開
+
+原因となった出来事自体はMemoryやTrust低下として残り得るため、Tensionが0に戻っても「何もなかったこと」にはしない。
+
+## Axis independence principle
+
+1つの出来事で全Relationship軸を一律に上下させない。
+
+例:
+
+```text
+楽しい雑談
+→ Familiarity + small
+→ Affection + small
+→ Comfort + small
+→ Trust almost unchanged
+
+約束を守る
+→ Trust + meaningful
+→ Affection + possible small
+→ Familiarity almost unchanged
+
+喧嘩
+→ Tension + large
+→ Comfort - moderate
+→ Trust / Affectionは内容次第
+```
+
+この分離により、例えば以下のような関係を表現できる。
+
+```text
+Affection 90
+Trust 45
+Comfort 80
+```
+
+これは「好きで一緒にいると楽しいが、重要なことを全面的に任せるほど信用してはいない」という関係として扱える。
+
 ## Relationship Tags
 
 数値だけでは関係の意味を表現できないため、タグを別途持つ。
