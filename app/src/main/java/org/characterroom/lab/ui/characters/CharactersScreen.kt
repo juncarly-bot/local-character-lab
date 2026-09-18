@@ -1,5 +1,6 @@
 package org.characterroom.lab.ui.characters
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +20,7 @@ import org.characterroom.lab.domain.model.CharacterRuntimeState
 fun CharactersScreen(
     modifier: Modifier = Modifier,
     characters: List<CharacterRuntimeState>,
+    onCharacterSelected: (String) -> Unit,
 ) {
     LazyColumn(
         modifier = modifier
@@ -32,14 +34,16 @@ fun CharactersScreen(
                 style = MaterialTheme.typography.headlineSmall,
             )
             Text(
-                text = "Profile editorへの入口になるMVP一覧",
+                text = "同じCharacter ProfileをChatと一覧の両方から開けます。",
                 style = MaterialTheme.typography.bodySmall,
             )
         }
 
         items(characters, key = { it.profile.id }) { character ->
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onCharacterSelected(character.profile.id) },
             ) {
                 Column(Modifier.padding(14.dp)) {
                     Text(
