@@ -37,7 +37,7 @@ class ConversationSignalParser {
 
         val escaped = Regex.escape(token)
         val pattern = Regex(
-            pattern = "(^|[\\s、,。.!！?？@])$escaped(さん|ちゃん|くん|様|さま|は|って|、|,|。|\\s|$|[!！?？])",
+            pattern = "(^|[\\s、,。.!！?？@])$escaped(さん|ちゃん|くん|様|さま|は|って|、|,|。|\\s|\\z|[!！?？])",
             option = RegexOption.IGNORE_CASE,
         )
         return pattern.containsMatchIn(text)
