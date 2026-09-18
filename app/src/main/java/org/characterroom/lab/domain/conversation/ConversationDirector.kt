@@ -1,6 +1,7 @@
 package org.characterroom.lab.domain.conversation
 
 import org.characterroom.lab.domain.model.CharacterRuntimeState
+import org.characterroom.lab.domain.model.ConversationAct
 import org.characterroom.lab.domain.model.LifeState
 import org.characterroom.lab.domain.model.Relationship
 import org.characterroom.lab.domain.model.RoomState
@@ -74,5 +75,50 @@ class ConversationDirector {
             selectedCharacterId = scores.firstOrNull()?.characterId,
             scores = scores,
         )
+    }
+
+    fun chooseAct(
+        character: CharacterRuntimeState,
+        topic: String,
+        signals: ConversationSignals,
+        recentAct: ConversationAct?,
+    ): ConversationAct {
+        val profile = character.profile
+        val interest = profile.interests[topic]
+            ?: profile.interests["general"]
+            ?: 50
+        val expertise = profile.expertise[topic]
+            ?: profile.expertise["general"]
+            ?: 20
+
+        if (signals.isQuestion) {
+            return if (expertise >= 70) {
+                ConversationAct.KNOWLEDGE
+            } else {
+                ConversationAct.PERSONAL_REACTION
+            }
+        }
+
+        if (recentAct == ConversationAct.KNOWLEDGE) {
+            return if (profile.personality.curiosity >= 55) {
+                ConversationAct.QUESTION
+            } else {
+                ConversationAct.BACKCHANNEL
+            }
+        }
+
+        if (signals.directlyAddressedCharacterId == profile.id) {
+            return ConversationAct.PERSONAL_REACTION
+        }
+
+        if (expertise >= 75 && interest >= 60) {
+            return ConversationAct.KNOWLEDGE
+        }
+
+        if (profile.personality.curiosity >= 70 && interest >= 50) {
+            return ConversationAct.QUESTION
+        }
+
+        return ConversationAct.PERSONAL_REACTION
     }
 }
