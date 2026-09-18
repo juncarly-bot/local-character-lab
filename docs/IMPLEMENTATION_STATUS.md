@@ -2,7 +2,7 @@
 
 ## Current state
 
-The repository now has an executable Android MVP foundation on `main`. The next slice adds the first shared Character Profile surface and latency instrumentation.
+Character Room Lab now has an executable Android MVP foundation, a shared Character Profile surface, and the first deterministic conversation-planning path before local LLM integration.
 
 ## Implemented
 
@@ -14,43 +14,55 @@ The repository now has an executable Android MVP foundation on `main`. The next 
 - directional Relationship model
 - deterministic Conversation Director speaker scoring
 - Developer-friendly speaker score contribution breakdown
-- `CharacterModelRuntime` abstraction
-- Preview Runtime as a temporary stand-in for the future local LLM
-- sample Character world
-- unit tests for direct address / Room OUT exclusion / recent-speaker penalty
-- GitHub Actions Android test + APK build workflow
 - shared Character Profile opened from Chat participant chips and Characters list
 - Profile sections for Overview / Relationship / Personality / Behavior / Interests / Expertise / Values
-- Profile is presented as a full-screen dialog so Chat composition and draft state stay alive behind it
+- full-screen Profile dialog preserving the underlying Chat composition
+- `CharacterModelRuntime` abstraction
+- Preview Runtime as a temporary stand-in for the future local LLM
 - foreground latency instrumentation for Director / generation / total turn
+- deterministic direct-address and question signal parser
+- direct address fed into speaker selection
+- deterministic Conversation Act selection with a basic Knowledge cooldown
+- `RuntimeContextBuilder` with a bounded recent transcript
+- generation now receives structured `CharacterRuntimeContext` rather than raw Character + text arguments
+- Chat developer trace for target / selected speaker / act / score / latency
+- unit tests for speaker selection, Room OUT exclusion, recent-speaker penalty, direct-address parsing, Act selection, and Context slicing
+- GitHub Actions Android test + APK build workflow
+
+## Current foreground path
+
+```text
+USER message
+-> deterministic signal parser
+-> direct target / question signal
+-> Conversation Director
+-> speaker selection
+-> Conversation Act selection
+-> RuntimeContextBuilder
+-> CharacterModelRuntime
+-> character utterance
+```
+
+This is intentionally structured so a real Main LLM can replace Preview Runtime without taking ownership of Character Profile, Relationship, Memory, or world state.
 
 ## Important limitation
 
 The current runtime does **not** yet execute a real local LLM.
 
-`PreviewCharacterModelRuntime` exists only to prove the end-to-end boundary:
-
-```text
-UI
--> ConversationDirector
--> CharacterModelRuntime
--> Character utterance
-```
-
-Character Profile, Relationship and Room state stay outside the model layer.
+The current signal parser is deliberately narrow. Ambiguous reply targets and semantic handoffs should later fall through to the lightweight Helper or Main model rather than turning the deterministic parser into a giant rule engine.
 
 ## Next implementation targets
 
 1. Profile editing + persistence boundary
 2. Room persistence
-3. Conversation Act selection
-4. Runtime Context Builder
-5. direct-address parser / Response Obligation
-6. laptop/local Main LLM adapter
-7. streaming token display
-8. Memory / Relationship event pipeline
-9. Guest Slot enter / leave scoring
-10. Helper model adapter after profiling
+3. Response Obligation / Handoff state
+4. richer Topic state + Topic Lifecycle
+5. laptop/local Main LLM adapter
+6. streaming token display
+7. Memory / Relationship event pipeline
+8. Guest Slot enter / leave scoring
+9. Helper model structured analysis after profiling
+10. Developer Mode dedicated inspector
 
 ## Performance contract
 
@@ -60,4 +72,4 @@ Normal foreground turn target remains:
 <= 10 sec
 ```
 
-The UI now exposes initial runtime timing so real Main / Helper model integration can be measured instead of guessed.
+The current deterministic planner adds negligible work compared with future model inference, and latency is already exposed in the Chat developer trace.
