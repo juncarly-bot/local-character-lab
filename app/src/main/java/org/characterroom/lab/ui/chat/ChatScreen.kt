@@ -29,10 +29,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.characterroom.lab.application.RuntimeContextBuilder
 import org.characterroom.lab.domain.conversation.ConversationDirector
+import org.characterroom.lab.domain.conversation.ConversationSignalParser
 import org.characterroom.lab.domain.conversation.SpeakerDecisionContext
 import org.characterroom.lab.domain.model.ChatMessage
 import org.characterroom.lab.domain.model.CharacterRuntimeState
+import org.characterroom.lab.domain.model.ConversationAct
 import org.characterroom.lab.domain.model.Relationship
 import org.characterroom.lab.domain.model.RoomState
 import org.characterroom.lab.runtime.CharacterGenerationRequest
@@ -50,6 +53,8 @@ fun ChatScreen(
     val roomCharacters = remember(characters) {
         characters.filter { it.roomState == RoomState.IN }
     }
+    val signalParser = remember { ConversationSignalParser() }
+    val contextBuilder = remember { RuntimeContextBuilder() }
     val messages = remember {
         mutableStateListOf(
             ChatMessage(
@@ -63,11 +68,16 @@ fun ChatScreen(
     var input by remember { mutableStateOf("") }
     var nextId by remember { mutableLongStateOf(2L) }
     var recentSpeakerId by remember { mutableStateOf<String?>(null) }
+    var recentAct by remember { mutableStateOf<ConversationAct?>(null) }
     var generating by remember { mutableStateOf(false) }
     var lastRuntime by remember { mutableStateOf<String?>(null) }
     var lastDirectorLatencyMs by remember { mutableStateOf<Long?>(null) }
     var lastGenerationLatencyMs by remember { mutableStateOf<Long?>(null) }
     var lastTotalLatencyMs by remember { mutableStateOf<Long?>(null) }
+    var lastDetectedTargetId by remember { mutableStateOf<String?>(null) }
+    var lastSelectedSpeakerName by remember { mutableStateOf<String?>(null) }
+    var lastAct by remember { mutableStateOf<ConversationAct?>(null) }
+    var lastSpeakerScore by remember { mutableStateOf<Double?>(null) }
     val scope = rememberCoroutineScope()
 
     Column(
@@ -140,6 +150,10 @@ fun ChatScreen(
 
         if (lastRuntime != null) {
             Text(
+                text = "route: ${lastDetectedTargetId ?: "auto"} -> ${lastSelectedSpeakerName ?: "-"} · act: ${lastAct?.name ?: "-"} · score: ${lastSpeakerScore?.toInt() ?: 0}",
+                style = MaterialTheme.typography.labelSmall,
+            )
+            Text(
                 text = "runtime: $lastRuntime · director: ${lastDirectorLatencyMs ?: 0}ms · generation: ${lastGenerationLatencyMs ?: 0}ms · total: ${lastTotalLatencyMs ?: 0}ms",
                 style = MaterialTheme.typography.labelSmall,
             )
@@ -176,14 +190,20 @@ fun ChatScreen(
                     generating = true
 
                     val directorStartedAt = System.nanoTime()
+                    val signals = signalParser.parse(
+                        text = userText,
+                        characters = roomCharacters,
+                    )
                     val decision = director.chooseSpeaker(
                         candidates = roomCharacters,
                         relationshipsToUser = relationshipsToUser,
                         context = SpeakerDecisionContext(
+                            directlyAddressedCharacterId = signals.directlyAddressedCharacterId,
                             recentSpeakerId = recentSpeakerId,
                         ),
                     )
                     lastDirectorLatencyMs = (System.nanoTime() - directorStartedAt) / 1_000_000L
+                    lastDetectedTargetId = signals.directlyAddressedCharacterId
 
                     val selected = roomCharacters.firstOrNull {
                         it.profile.id == decision.selectedCharacterId
@@ -199,14 +219,35 @@ fun ChatScreen(
                             text = "今は誰も話さなかった。",
                         )
                     } else {
+                        val act = director.chooseAct(
+                            character = selected,
+                            topic = "general",
+                            signals = signals,
+                            recentAct = recentAct,
+                        )
+                        val runtimeContext = contextBuilder.build(
+                            character = selected,
+                            relationshipToUser = relationshipsToUser[selected.profile.id],
+                            topic = "general",
+                            act = act,
+                            userText = userText,
+                            recentMessages = messages.toList(),
+                        )
+
+                        lastSelectedSpeakerName = selected.profile.name
+                        lastAct = act
+                        lastSpeakerScore = decision.scores
+                            .firstOrNull { it.characterId == selected.profile.id }
+                            ?.score
+
                         scope.launch {
                             val result = runtime.generate(
                                 CharacterGenerationRequest(
-                                    character = selected.profile,
-                                    userText = userText,
+                                    context = runtimeContext,
                                 ),
                             )
                             recentSpeakerId = selected.profile.id
+                            recentAct = act
                             lastRuntime = result.runtimeName
                             lastGenerationLatencyMs = result.generationLatencyMs
                             lastTotalLatencyMs = (System.nanoTime() - foregroundStartedAt) / 1_000_000L
