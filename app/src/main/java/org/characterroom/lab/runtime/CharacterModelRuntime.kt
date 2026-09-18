@@ -12,6 +12,7 @@ data class CharacterGenerationRequest(
 data class CharacterGenerationResult(
     val text: String,
     val runtimeName: String,
+    val generationLatencyMs: Long,
 )
 
 interface CharacterModelRuntime {
@@ -25,6 +26,7 @@ interface CharacterModelRuntime {
  */
 class PreviewCharacterModelRuntime : CharacterModelRuntime {
     override suspend fun generate(request: CharacterGenerationRequest): CharacterGenerationResult {
+        val startedAt = System.nanoTime()
         delay(180)
 
         val text = when (request.character.id) {
@@ -37,6 +39,7 @@ class PreviewCharacterModelRuntime : CharacterModelRuntime {
         return CharacterGenerationResult(
             text = text,
             runtimeName = "preview-runtime",
+            generationLatencyMs = (System.nanoTime() - startedAt) / 1_000_000L,
         )
     }
 }

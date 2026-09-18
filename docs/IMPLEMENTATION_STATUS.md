@@ -1,14 +1,10 @@
 # Implementation Status
 
-## Current branch
+## Current state
 
-`feature/android-mvp-skeleton`
+The repository now has an executable Android MVP foundation on `main`. The next slice adds the first shared Character Profile surface and latency instrumentation.
 
-## First implementation slice
-
-The repository has moved from design-only documentation into an executable Android MVP skeleton.
-
-Implemented:
+## Implemented
 
 - Android application module
 - Kotlin + Jetpack Compose
@@ -16,13 +12,17 @@ Implemented:
 - 3 resident characters + Guest Slot visual shell
 - Character Profile / Runtime State domain models
 - directional Relationship model
-- initial deterministic Conversation Director speaker scoring
+- deterministic Conversation Director speaker scoring
 - Developer-friendly speaker score contribution breakdown
 - `CharacterModelRuntime` abstraction
 - Preview Runtime as a temporary stand-in for the future local LLM
 - sample Character world
 - unit tests for direct address / Room OUT exclusion / recent-speaker penalty
 - GitHub Actions Android test + APK build workflow
+- shared Character Profile opened from Chat participant chips and Characters list
+- Profile sections for Overview / Relationship / Personality / Behavior / Interests / Expertise / Values
+- Profile is presented as a full-screen dialog so Chat composition and draft state stay alive behind it
+- foreground latency instrumentation for Director / generation / total turn
 
 ## Important limitation
 
@@ -37,20 +37,20 @@ UI
 -> Character utterance
 ```
 
-The next runtime implementation can replace Preview Runtime without moving Character Profile, Relationship, Memory, or Room state into the model layer.
+Character Profile, Relationship and Room state stay outside the model layer.
 
 ## Next implementation targets
 
-1. Character Profile screen
-2. Room persistence boundary
+1. Profile editing + persistence boundary
+2. Room persistence
 3. Conversation Act selection
 4. Runtime Context Builder
-5. latency instrumentation
+5. direct-address parser / Response Obligation
 6. laptop/local Main LLM adapter
-7. Helper model adapter after profiling
+7. streaming token display
 8. Memory / Relationship event pipeline
 9. Guest Slot enter / leave scoring
-10. streaming token display
+10. Helper model adapter after profiling
 
 ## Performance contract
 
@@ -60,4 +60,4 @@ Normal foreground turn target remains:
 <= 10 sec
 ```
 
-The implementation should optimize first-visible-token latency and keep normal Main LLM calls near one per user turn.
+The UI now exposes initial runtime timing so real Main / Helper model integration can be measured instead of guessed.

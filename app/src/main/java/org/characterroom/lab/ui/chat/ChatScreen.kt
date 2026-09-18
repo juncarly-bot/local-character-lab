@@ -45,6 +45,7 @@ fun ChatScreen(
     relationshipsToUser: Map<String, Relationship>,
     director: ConversationDirector,
     runtime: CharacterModelRuntime,
+    onCharacterSelected: (String) -> Unit,
 ) {
     val roomCharacters = remember(characters) {
         characters.filter { it.roomState == RoomState.IN }
@@ -64,6 +65,9 @@ fun ChatScreen(
     var recentSpeakerId by remember { mutableStateOf<String?>(null) }
     var generating by remember { mutableStateOf(false) }
     var lastRuntime by remember { mutableStateOf<String?>(null) }
+    var lastDirectorLatencyMs by remember { mutableStateOf<Long?>(null) }
+    var lastGenerationLatencyMs by remember { mutableStateOf<Long?>(null) }
+    var lastTotalLatencyMs by remember { mutableStateOf<Long?>(null) }
     val scope = rememberCoroutineScope()
 
     Column(
@@ -87,7 +91,7 @@ fun ChatScreen(
         ) {
             roomCharacters.forEach { character ->
                 AssistChip(
-                    onClick = { },
+                    onClick = { onCharacterSelected(character.profile.id) },
                     label = {
                         Text("${character.profile.name} · ${character.mood.label}")
                     },
@@ -134,9 +138,9 @@ fun ChatScreen(
             }
         }
 
-        lastRuntime?.let {
+        if (lastRuntime != null) {
             Text(
-                text = "runtime: $it",
+                text = "runtime: $lastRuntime · director: ${lastDirectorLatencyMs ?: 0}ms · generation: ${lastGenerationLatencyMs ?: 0}ms · total: ${lastTotalLatencyMs ?: 0}ms",
                 style = MaterialTheme.typography.labelSmall,
             )
         }
@@ -159,6 +163,7 @@ fun ChatScreen(
             Button(
                 enabled = input.isNotBlank() && !generating,
                 onClick = {
+                    val foregroundStartedAt = System.nanoTime()
                     val userText = input.trim()
                     input = ""
                     messages += ChatMessage(
@@ -170,6 +175,7 @@ fun ChatScreen(
                     )
                     generating = true
 
+                    val directorStartedAt = System.nanoTime()
                     val decision = director.chooseSpeaker(
                         candidates = roomCharacters,
                         relationshipsToUser = relationshipsToUser,
@@ -177,12 +183,15 @@ fun ChatScreen(
                             recentSpeakerId = recentSpeakerId,
                         ),
                     )
+                    lastDirectorLatencyMs = (System.nanoTime() - directorStartedAt) / 1_000_000L
+
                     val selected = roomCharacters.firstOrNull {
                         it.profile.id == decision.selectedCharacterId
                     }
 
                     if (selected == null) {
                         generating = false
+                        lastTotalLatencyMs = (System.nanoTime() - foregroundStartedAt) / 1_000_000L
                         messages += ChatMessage(
                             id = nextId++,
                             speakerId = "system",
@@ -199,6 +208,8 @@ fun ChatScreen(
                             )
                             recentSpeakerId = selected.profile.id
                             lastRuntime = result.runtimeName
+                            lastGenerationLatencyMs = result.generationLatencyMs
+                            lastTotalLatencyMs = (System.nanoTime() - foregroundStartedAt) / 1_000_000L
                             messages += ChatMessage(
                                 id = nextId++,
                                 speakerId = selected.profile.id,
