@@ -6,6 +6,69 @@
 
 時間・数値・状態遷移・上限・cooldownなどはCharacter Engineの決定論ロジックで処理する。
 
+## Latency target v1
+
+通常のforeground会話は、USERが送信してから通常ターンが実用上完了するまで **10秒以内を目安** とする。本方針を正式なv1性能目標として採用する。
+
+```text
+Normal foreground turn
+target: <= 10 sec
+```
+
+これは全ケースを10秒で強制終了するという意味ではなく、通常会話の設計・計測・最適化の基準値とする。
+
+### Response pacing
+
+体感遅延を下げるため、全文生成完了まで待ってから表示するのではなく、main modelが生成を開始したら可能な限りstreaming表示する。
+
+初期の調整目安:
+
+```text
+first visible token:
+できるだけ早く。2-4秒級を狙う
+
+normal short utterance:
+5-8秒級を狙う
+
+normal foreground turn:
+10秒以内を目安
+```
+
+上記の細かい数値は実機計測で調整可能だが、10秒以内の通常ターン目標はv1の基準として保持する。
+
+### Deadline-aware execution
+
+10秒目標を守るため、foregroundでは品質を無制限に積み上げない。
+
+優先方針:
+
+- main model呼び出しは通常1回を第一目標とする
+- lightweight helperを使う場合、Topic / emotion signal / Interaction Event / Memory candidate等をできるだけ1回のstructured analysisへまとめる
+- simple direct address / obvious reply target / trivial commandはdeterministic codeで処理し、不要なLLM callを避ける
+- secondary character reactionは必須ではなく、残り時間・会話上の必要性を見て省略可能にする
+- 通常雑談の発話は短めを基本とし、長いknowledge回答は明示的に必要なときだけ許可する
+- 追加LLM callよりも、USERへ最初の自然な返答を早く返すことを優先する
+
+複数キャラクターが反応する場合も、第一発話を先にstreaming表示し、その後に必要なsecondary reactionを評価できる構造を優先する。
+
+### Profiling
+
+Developer Modeでは少なくとも以下の経過時間を計測可能にする。
+
+```text
+deterministic processing
+helper analysis
+memory retrieval
+director
+context build
+prompt evaluation
+main generation
+validation
+total foreground latency
+```
+
+0.6B級Helperの追加・役割拡大は「モデルを増やせば速くなる」と仮定せず、実測したボトルネックに基づいて判断する。
+
 ## Responsibility split
 
 ### Main local LLM
