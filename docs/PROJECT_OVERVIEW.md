@@ -53,6 +53,7 @@ USERはキャラクターを明示的にInviteできる。キャラクターは�
 - Expertise / Knowledge background
 - Values
 - Life-cycle tendency
+- Character Goals
 
 ### Runtime state
 
@@ -148,7 +149,7 @@ Conversation Seedは完成した台詞ではなく、「後で持ち出したい
 - environment
 - random_thought
 
-Character Goalは現在設計中の上位概念。
+Character Goalは正式採用した上位概念で、Character Profileから設定・編集できる。
 
 ```text
 Goal
@@ -232,7 +233,7 @@ Settings
 
 Chat内のCharacter iconをタップするとCharacter Profileを開く。Characters一覧からも同じProfileへ入る。
 
-ProfileではPersonality、Speech Style、Interests、Expertise、Relationship、Memory、Desire / Seeds、Behavior、Developer情報などを確認・編集する。
+ProfileではPersonality、Speech Style、Interests、Expertise、Relationship、Memory、Character Goals、Desire / Seeds、Behavior、Developer情報などを確認・編集する。
 
 ## 14. MVP success condition
 
