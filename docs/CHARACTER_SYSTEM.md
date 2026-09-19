@@ -13,6 +13,7 @@ v1では以下の構造を正式な基本方針として採用する。
 - Expertise / knowledge background
 - Values
 - Life-cycle settings
+- Character Goals
 - Initial directional Relationships
 
 正確な保存形式や数値アンカーは後で調整してよいが、概念構造はこの形で進める。
@@ -181,6 +182,46 @@ values:
 
 数値パラメータは「どう動くか」、Valuesは「なぜそう動くか」を表現する。
 
+## Character Goals
+
+Character GoalをCharacter Profileの正式な設定領域として扱う。
+
+Goalは「そのキャラクターが中長期的に何をしたいか」を表し、Desire / Conversation Seedより長い時間軸を持つ。
+
+```text
+Character Profile Goal
+↓
+Runtime Goal State
+↓
+Desire
+↓
+Conversation Seed
+↓
+Conversation / Action
+```
+
+Character ProfileではGoalの定義を編集可能にする。
+
+例:
+
+```yaml
+goals:
+  - id: goal_123
+    description: "USERの物理の勉強を見守りたい"
+    type: relationship
+    target: user
+    horizon: medium
+    strength: 70
+    enabled: true
+    source: user
+```
+
+進捗、現在のactivation、last_progress_at、statusなどはRuntime StateとしてProfile定義から分離する。
+
+GoalはRelationshipを直接増減させない。Goalが行動傾向を変え、その結果として起きたInteraction EventがRelationshipへ影響する。
+
+詳細は `docs/CHARACTER_GOAL_SYSTEM.md` を参照する。
+
 ## Current state
 
 恒常Profileとは別に、以下の可変状態を持つ。
@@ -189,6 +230,7 @@ values:
 - `room_state`: `IN` / `OUT`
 - `mood`
 - `desires`
+- Goal runtime state / progress / activation
 - 関係ごとの一時的な `tension`
 - Topicごとの一時Knowledge Access / Confidence
 
@@ -206,6 +248,7 @@ MoodやDesireはProfileそのものではなく、Conversation Analysis、時刻
 - Interests
 - Expertise / knowledge background
 - Values
+- Character Goals
 - 初期関係性や明示的な関係設定
 
 Interests / Expertise UIは次の3層を基本とする。
