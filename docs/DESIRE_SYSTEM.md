@@ -4,7 +4,7 @@
 
 キャラクターを「話しかけられた時だけ反応するAI」にしない。
 
-Personality、Interests、Values、Relationships、Memory、Moodから、その時点の自発的な欲求を発生させ、入室・発言・話題再開につなげる。
+Character Goal、Personality、Interests、Values、Relationships、Memory、Moodから、その時点の自発的な欲求を発生させ、入室・発言・話題再開につなげる。
 
 ## Examples
 
@@ -16,6 +16,42 @@ Personality、Interests、Values、Relationships、Memory、Moodから、その�
 - 物理の話をしたい
 - 特に何もしたくない
 ```
+
+## Relationship to Character Goal
+
+DesireはCharacter Goalより短い時間軸を持つ。
+
+```text
+Character Goal
+= 中長期的な方向性
+
+Desire
+= 今この瞬間にやりたいこと
+
+Conversation Seed
+= 実際に会話へ持ち込める候補
+```
+
+例:
+
+```text
+Goal:
+USERの物理の勉強を見守りたい
+
+↓ current context
+
+Desire:
+昨日の問題が解けたか聞きたい
+
+↓ candidate
+
+Seed:
+昨日の問題について聞く
+```
+
+Goalがあっても、現在Contextに関係がなければDesireを強制生成しない。
+
+詳細は `docs/CHARACTER_GOAL_SYSTEM.md` を参照する。
 
 ## Structure
 
@@ -64,4 +100,4 @@ Developer Modeでは発生理由・強さ・参照Memoryを確認できるよう
 
 Desireは台詞そのものではない。
 
-「昨日の結果を聞きたい」という欲求を決めた後で、実際にどう言うかはCharacter Profileと3B LLMに生成させる。
+「昨日の結果を聞きたい」という欲求を決めた後で、実際にどう言うかはCharacter ProfileとMain LLMに生成させる。
