@@ -2,7 +2,7 @@
 
 ## Status
 
-Design candidate / memo only. Not yet promoted to the canonical v1 specification.
+Promoted on 2026-09-19. The core Character Goal concept is now canonical in `docs/CHARACTER_GOAL_SYSTEM.md`. This file remains as the original design history.
 
 ## Character Goal concept
 

@@ -88,9 +88,10 @@ Affection 86
 3. Interests & Expertise
 4. Relationships
 5. Memory
-6. Desire & Seeds
-7. Behavior
-8. Developer
+6. Goals
+7. Desire & Seeds
+8. Behavior
+9. Developer
 
 モバイルでは横タブを大量に並べるより、上部の少数タブ + 折りたたみSection、または縦スクロールSectionを優先する。
 
@@ -254,7 +255,49 @@ Follow-up: 結果を聞く
 
 Developer ModeではMemory ID、known_by、retentionなども確認できる。
 
-## 6. Desire & Seeds
+## 6. Goals
+
+Character GoalはCharacter Profileから設定・編集できる正式な領域とする。
+
+通常表示例:
+
+```text
+Goals
+
+USERの物理の勉強を見守りたい
+Target: USER
+Horizon: medium
+Status: active
+Progress: 35%
+
+TTともう少し仲良くなりたい
+Target: TT
+Horizon: medium
+Status: active
+Progress: 20%
+```
+
+編集可能項目:
+
+- description
+- type
+- target
+- horizon
+- strength
+- enabled / disabled
+
+操作候補:
+
+- Add Goal
+- Edit Goal
+- Enable / Disable
+- Delete / Archive
+
+`progress` や現在の `activation` はRuntime Stateであり、通常UIから直接数値編集しない。
+
+Developer ModeではGoal activation、progress reason、source Memory / Relationship、そこから生成されたDesire / Seedを確認できる。
+
+## 7. Desire & Seeds
 
 Current DesireとConversation Seedを表示する。
 
@@ -279,7 +322,7 @@ Seed表示例:
 
 通常UIでは内部scoreを必ずしも表示しない。
 
-## 7. Behavior
+## 8. Behavior
 
 会話傾向を編集する。
 
@@ -290,7 +333,7 @@ Seed表示例:
 
 必要に応じてLife Cycle設定もここから編集できる。
 
-## 8. Values / Identity
+## 9. Values / Identity
 
 キャラクターのIdentity、speech style、Valuesは明示的に編集可能にする。
 
