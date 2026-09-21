@@ -116,7 +116,13 @@ Confidence      どの程度確信しているか
 
 Knowledge Accessは `UNKNOWN / HEARD / KNOWN / DETAILED` を基本にする。
 
-Memoryも「誰がその出来事を知っているか」を保持し、その場にいなかったCharacterへ自動共有しない。
+Memoryはshared Memory Storeに保存し、各Memoryの `known_by` で「誰が知っているか」を保持する。その場にいなかったCharacterへ自動共有しない。
+
+v1のMemory typeは `episode / personal_fact / relationship_event / follow_up / opinion / shared_experience / knowledge` を基本とする。
+
+全発言を保存せず、Analysis Segment単位でMemory Candidateを評価する。importance 0-100、Retention、訂正履歴、Perspective、忘却、Top 3-6 retrievalを使い、Characterが必要な時だけ関連Memoryを思い出す構造にする。
+
+USERはCharacter ProfileからMemoryの訂正、Pin / Protect、Forget、Deleteを行える。
 
 ## 8. Conversation Director
 
