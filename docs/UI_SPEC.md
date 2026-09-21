@@ -230,30 +230,59 @@ Relationshipの方向性は内部では保持するが、通常UIで両方向を
 
 ## 5. Memory
 
-そのキャラクターが知っている / 覚えているMemoryを確認する。
+そのキャラクターが知っている / 覚えているMemoryを確認・管理する。
 
-表示候補:
+Memoryはshared Storeに保存し、Characterごとの `known_by` で知識差を維持する。
 
-- summary
-- type
-- topics
-- importance
-- confidence
-- salience
-- created_at
-- follow-up状態
-
-通常UIでは自然文中心にする。
+通常UIでは内部数値より自然文を優先する。
 
 例:
 
 ```text
-昨日、USERが試験を受ける予定だと話していた
-覚えやすさ: 高
-Follow-up: 結果を聞く
+Memory
+
+最近の記憶
+- 昨日USERが試験について話した
+- TTと勉強の話をした
+
+大切な記憶
+- USERが約束を守ってくれた
+
+意見・好み
+- 静かなEVには少し好感を持っている
+
+Follow-up
+- USERに試験結果を聞きたい
 ```
 
-Developer ModeではMemory ID、known_by、retentionなども確認できる。
+Memory詳細では以下を確認できる。
+
+- summary
+- type
+- source
+- who knows
+- perspective
+- importance
+- confidence
+- retention
+- created_at
+- revision history
+
+ユーザー操作:
+
+- Correct
+- Pin / Protect
+- Forget
+- Delete
+- Advanced: known_by correction
+
+Correctは旧Memoryを直接上書きせず、新Memoryを作成して旧Memoryを `superseded` にする。
+
+Forgetは通常retrievalから外すsoft operation、DeleteはStoreからのhard deleteとして区別する。
+
+Developer ModeではMemory ID、importance score breakdown、known_by、retention、retrieval score、source_event_id、revision chainなどを確認できる。
+
+詳細は `docs/MEMORY_SYSTEM.md` を参照する。
 
 ## 6. Goals
 
